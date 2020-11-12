@@ -1,3 +1,11 @@
+# Patched by @matviienko 
+
+See `.env.example` file for example of `.env` file which you need to create in order to make it work, follow comments, supereasy.
+
+MacOS X: simply run `sh run.sh`
+
+Enjoy taiga at `http://localhost/`. In case of backup: your database now in `pgdata` folder and media in `media` folder.
+
 # What is Taiga?
 
 Taiga is a project management platform for startups and agile developers & designers who want a simple, beautiful tool that makes work truly enjoyable.

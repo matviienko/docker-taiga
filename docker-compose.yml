@@ -1,10 +1,21 @@
 version: '2'
-
 services:
   taiga:
-    build: .
+    container_name: taiga
+    env_file: .env
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        TAIGA_SCRIPT_REPOSITORY: "https://${GITHUB_PERSONAL_TOKEN}@${TAIGA_SCRIPT_REPOSITORY:-github.com/matviienko/taiga-scripts.git}"
+        TAIGA_BACK_REPOSITORY: "https://${GITHUB_PERSONAL_TOKEN}@${TAIGA_BACK_REPOSITORY:-github.com/matviienko/taiga-back.git}"
+        TAIGA_BACK_BRANCH: ${TAIGA_BACK_BRANCH:-stable}
+        TAIGA_FRONT_REPOSITORY: "https://${GITHUB_PERSONAL_TOKEN}@${TAIGA_FRONT_REPOSITORY:-github.com/matviienko/taiga-front.git}"
+        TAIGA_FRONT_BRANCH: ${TAIGA_FRONT_BRANCH:-stable}
+        # TAIGA_FRONT_DIST_REPOSITORY: "https://${GITHUB_PERSONAL_TOKEN}@${TAIGA_FRONT_DIST_REPOSITORY:-github.com/matviienko/taiga-front-dist.git}"
+        # TAIGA_FRONT_DIST_BRANCH: "stable"
     ports:
-      - 80:80
+      - "${TAIGA_UI_PORT:-80}:80/tcp"
       # - 443:443 # To enable SSL, uncomment this line
     depends_on:
       - postgres
@@ -21,16 +32,15 @@ services:
       # - ./ssl.key:/etc/nginx/ssl/ssl.key:ro # To enable SSL, uncomment this line
     environment:
       # Your hostname (REQUIRED)
-      TAIGA_HOSTNAME: localhost
-
+      TAIGA_HOSTNAME: ${TAIGA_BASEURL:-localhost}
       # Database settings
       # To use an external database, simply update these and remove the postgres
       # service from this docker-compose.yml file
-      TAIGA_DB_NAME: taigadb
-      TAIGA_DB_HOST: postgres
-      TAIGA_DB_USER: postgres
-      TAIGA_DB_PASSWORD: password
-      TAIGA_SLEEP: 15 # when the db comes up from docker, it is usually too quick
+      TAIGA_DB_NAME: ${TAIGA_DB_NAME:-taigadb}
+      TAIGA_DB_HOST: ${TAIGA_DB_HOST:-postgres}
+      TAIGA_DB_USER: ${TAIGA_DB_USER:-postgres}
+      TAIGA_DB_PASSWORD: ${TAIGA_DB_PASSWORD:-password}
+      TAIGA_SLEEP: ${TAIGA_SLEEP:-15} # when the db comes up from docker, it is usually too quick
 
       # TAIGA_SSL: True # To enable SSL, uncomment this line
       # TAIGA_SSL_BY_REVERSE_PROXY: True # To enable SSL, handling by a reverse proxy, uncomment this
@@ -45,11 +55,13 @@ services:
       # TAIGA_EMAIL_PASS: super-secure-pass phrase thing!
 
   postgres:
+    container_name: postgres
+    env_file: .env
     image: postgres
     environment:
-      POSTGRES_DB: taigadb
-      POSTGRES_PASSWORD: password
-      POSTGRES_USER: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-taigadb}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
     ports:
       - 5432
     volumes:

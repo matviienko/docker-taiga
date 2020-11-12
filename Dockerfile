@@ -1,30 +1,51 @@
 FROM python:3.5
-MAINTAINER Benjamin Hutchins <ben@hutchins.co>
-
+WORKDIR /tmp
+###
+ARG TAIGA_SCRIPT_REPOSITORY=git@github.com:taigaio/taiga-scripts.git
+###
+ARG TAIGA_BACK_REPOSITORY=git@github.com:taigaio/taiga-back.git
+ENV TAIGA_BACK_REPOSITORY=$TAIGA_BACK_REPOSITORY
+ARG TAIGA_BACK_BRANCH=stable
+ENV TAIGA_BACK_BRANCH=$TAIGA_BACK_BRANCH
+###
+ARG TAIGA_FRONT_DIST_REPOSITORY=git@github.com:taigaio/taiga-front-dist.git
+ENV TAIGA_FRONT_DIST_REPOSITORY=$TAIGA_FRONT_DIST_REPOSITORY
+ARG TAIGA_FRONT_DIST_BRANCH=stable
+ENV TAIGA_FRONT_DIST_BRANCH=$TAIGA_FRONT_DIST_BRANCH
+###
+ARG TAIGA_FRONT_REPOSITORY=git@github.com:taigaio/taiga-front.git
+ENV TAIGA_FRONT_REPOSITORY=$TAIGA_FRONT_REPOSITORY
+ARG TAIGA_FRONT_BRANCH=stable
+ENV TAIGA_FRONT_BRANCH=$TAIGA_FRONT_BRANCH
+###
 ENV DEBIAN_FRONTEND noninteractive
+# ENV NGINX_VERSION 1.15.5-1~stretch
+# ###
+# RUN apt-key adv \
+#   --keyserver hkp://pgp.mit.edu:80 \
+#   --recv-keys 573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62
 
-# Version of Nginx to install
-ENV NGINX_VERSION 1.15.5-1~stretch
+# RUN echo "deb http://nginx.org/packages/mainline/debian/ stretch nginx" >> /etc/apt/sources.list
 
-RUN apt-key adv \
-  --keyserver hkp://pgp.mit.edu:80 \
-  --recv-keys 573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62
-
-RUN echo "deb http://nginx.org/packages/mainline/debian/ stretch nginx" >> /etc/apt/sources.list
-
-RUN set -x; \
-    apt-get update \
-    && apt-get install -y --no-install-recommends \
+RUN set -x; apt-get update
+RUN apt-get install -y nodejs npm nginx
+RUN npm install -g gulp npm@latest
+RUN apt-get install -y --no-install-recommends \
         locales \
         gettext \
         ca-certificates \
-        nginx=${NGINX_VERSION} \
+        # nginx=${NGINX_VERSION} \
     && rm -rf /var/lib/apt/lists/*
 
 RUN locale-gen en_US.UTF-8 && dpkg-reconfigure locales
 
-COPY taiga-back /usr/src/taiga-back
-COPY taiga-front-dist/ /usr/src/taiga-front-dist
+RUN git clone -b ${TAIGA_BACK_BRANCH} --single-branch ${TAIGA_BACK_REPOSITORY} taiga-back
+RUN cp -r ./taiga-back /usr/src/taiga-back
+RUN git clone -b ${TAIGA_FRONT_BRANCH} ${TAIGA_FRONT_REPOSITORY} taiga-front-dist
+RUN cd ./taiga-front-dist && npm ci && npx gulp deploy
+RUN mkdir -p /usr/src/taiga-front-dist && cp -r ./taiga-front-dist/dist /usr/src/taiga-front-dist
+# COPY taiga-back /usr/src/taiga-back
+# COPY taiga-front-dist/ /usr/src/taiga-front-dist
 COPY docker-settings.py /usr/src/taiga-back/settings/docker.py
 COPY conf/locale.gen /etc/locale.gen
 COPY conf/nginx/nginx.conf /etc/nginx/nginx.conf
@@ -63,7 +84,7 @@ ENV LC_TYPE en_US.UTF-8
 ENV TAIGA_SSL False
 ENV TAIGA_SSL_BY_REVERSE_PROXY False
 ENV TAIGA_ENABLE_EMAIL False
-ENV TAIGA_HOSTNAME localhost
+ENV TAIGA_HOSTNAME "localhost:8080"
 ENV TAIGA_SECRET_KEY "!!!REPLACE-ME-j1598u1J^U*(y251u98u51u5981urf98u2o5uvoiiuzhlit3)!!!"
 
 RUN python manage.py collectstatic --noinput
