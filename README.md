@@ -2,7 +2,9 @@
 
 See `.env.example` file for example of `.env` file which you need to create in order to make it work, follow comments, supereasy.
 
-MacOS X: simply run `sh run.sh`
+🍏macOS: simply run `sh .sh`
+
+♥️Lovely 🪟Windows: before you clone any repo into windows, make sure your `gitattributes` configured for `LF` end of line, for example here: `C:\Program Files\Git\etc\gitattributes`, you can use config: `* text eol=lf`. Only then clone the repo and run `.ps1` script.
 
 Enjoy taiga at `http://localhost/`. In case of backup: your database now in `pgdata` folder and media in `media` folder.
 
